@@ -94,7 +94,7 @@ to go
           ifelse random 100 < group_coordination[
             ;; Coordinate
             ;; Move with the movement of the fish around you
-
+            find-flockmates
             align dt
           ]
           [
@@ -103,7 +103,7 @@ to go
             select-escape-task dt
           ]
           flock dt * weight
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
         ]
       ]
     ]
@@ -661,7 +661,7 @@ SWITCH
 87
 hunting?
 hunting?
-0
+1
 1
 -1000
 
@@ -792,7 +792,7 @@ CHOOSER
 escape-strategy
 escape-strategy
 "default" "turn 90 deg" "sacrifice" "sprint"
-0
+1
 
 SLIDER
 11
@@ -921,7 +921,7 @@ group_coordination
 group_coordination
 0
 100
-50.0
+64.0
 1
 1
 NIL

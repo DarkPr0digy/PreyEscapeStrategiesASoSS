@@ -83,14 +83,14 @@ to go
         ;; If you have a nearest predator
         if nearest-predator != nobody [
 
-          ;; THESE LINES MAKE IT REACT
+          ;; THESE LINES MADe IT REACT
           ;; =====================================================
           ;;( select-escape-task dt )
           ;; set weight flocking-weight
           ;; =====================================================
 
-          ;; Coordination Logic
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;; Coordination or Single Actor Logic
+          ;; =====================================================
           ifelse random 100 < group_coordination[
             ;; Coordinate
             ;; Move with the movement of the fish around you
@@ -103,7 +103,7 @@ to go
             select-escape-task dt
           ]
           flock dt * weight
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;; =====================================================
         ]
       ]
     ]
