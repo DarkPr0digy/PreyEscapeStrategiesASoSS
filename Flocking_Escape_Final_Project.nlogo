@@ -1244,6 +1244,26 @@ numOfClusters
 1
 11
 
+TEXTBOX
+1046
+357
+1196
+375
+Cluster Age
+11
+0.0
+1
+
+TEXTBOX
+1189
+357
+1339
+375
+Cluster Size\n
+11
+0.0
+1
+
 @#$#@#$#@
 ## WHAT IS IT?
 
