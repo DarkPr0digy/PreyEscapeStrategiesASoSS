@@ -7,7 +7,7 @@
 
 breed [fish onefish]
 breed [predators predator]
-
+breed [clusterCentroids clusterCentroid]
 
 fish-own [
   flockmates         ;; agentset of nearby fish
@@ -16,6 +16,7 @@ fish-own [
   vision             ;; current vision range
   delta-speed        ;; random speed dev. per update
   delta-noise        ;; random rotation per update
+  leader             ;; only used to identify the cluster. They don't actually lead the cluster in any way.
 ]
 
 predators-own [
@@ -25,6 +26,15 @@ predators-own [
   handle-time        ;; count down handle time
 ]
 
+
+clusterCentroids-own [
+  leaderID           ;; id of leader
+  age                ;; age of cluster
+  agentsInCluster    ;; agents that are part of the cluster
+  linksOfCluster     ;; links of cluster
+]
+
+
 globals [
   catches
   losts
@@ -32,6 +42,20 @@ globals [
   counter
   ordetect
   prevprey
+
+  ;; Cluster variables
+  numOfClusters
+  leaders ; cluster leaders, they play not role other than defining the cluster
+
+  averageClusterAge
+  minClusterAge
+  maxClusterAge
+  stdClusterAge
+
+  averageClusterSize
+  minClusterSize
+  maxClusterSize
+  stdClusterSize
 ]
 
 to setup
@@ -41,6 +65,8 @@ to setup
     set size 1.5
     set vision max-vision
     setxy random-xcor random-ycor
+    set leader self ; initially, every agent is a cluster by themselves.
+
   ]
   set counter 0
   set lock-ons 0
@@ -111,6 +137,44 @@ to go
   if counter > 300
   [set hunting? true
    set detection-range ordetect]
+
+  ;;; handle clusters
+
+  ;; first show/hide centroids/links
+  ask clusterCentroids[
+    if-else show-centroids? [show-turtle] [hide-turtle]
+  ]
+  ask links [
+    ;; first, color or hide links depending on the switch
+    if-else show-links? [color-link] [hide-link]
+  ]
+
+  ask links[
+    ;; then, remove links between fish that are too far away
+    if link-length > clustering-distance [die]
+  ]
+
+  ask fish [
+    set leader self
+    create-links-with other fish in-radius clustering-distance
+    ask links [
+      ;; Color or hide links depending on the switch
+      if-else show-links? [color-link] [hide-link]
+    ]
+  ]
+
+  ; go over agents, and redefine clusters. We need to go through agents in the same  order every time,
+  ; so the leaders are not randomly re-selected (colors would change every time then)
+  foreach sort fish [fishX ->
+    ask fishX[
+      ask link-neighbors [merge];(re)define clusters.
+    ]
+  ]
+
+  count-clusters ; leaders[] is initialised here
+  calculate-cluster-centroids ; calculates the centroids of the agent clusters
+
+  update-global-reporters ; update cluster metrics
   tick
 end
 
@@ -308,6 +372,113 @@ to turn-at-most [turn max-turn]  ;; turtle procedure
         [ rt max-turn ]
         [ lt max-turn ] ]
     [ rt turn ]
+end
+
+
+;;; CLUSTERING PROCEDURES
+
+to color-link
+  show-link
+  set thickness 0.2
+  set color yellow
+end
+
+
+to merge
+  set leader [leader] of myself
+  ; Merge any neighboring nodes that haven't merged yet
+  ask link-neighbors with [leader != [leader] of myself]
+    [ merge ]; recursively expand cluster
+end
+
+to count-clusters
+  set leaders [] ; re-initialise it every time.
+  ask fish[
+    if not member? leader leaders [ ; if leader is not already registered
+      set leaders lput leader leaders ; insert leader in list of leaders
+    ]
+  ]
+  set numOfClusters length leaders ; set the number of clusters to be equal to the number of individual leaders ???
+end
+
+to calculate-cluster-centroids
+  ; get rid of clusters that are no longer clusters.
+  ask clusterCentroids[
+    let timeToDie false
+    ask onefish leaderID[
+      if leader != self [set timeToDie true] ; if the leader does not have itself as a leader, this is not a cluster anymore
+    ]
+    if timeToDie = true [die]
+  ]
+  ; create clusterCentroids for the new clusters
+  foreach leaders [currentLeader ->
+    if NOT (centroid-with-this-leader-exists ([who] of currentLeader))
+    [
+      create-clusterCentroids 1[
+        if-else show-centroids? [show-turtle] [hide-turtle]
+        set color pink
+        set shape "circle"
+        set leaderID [who] of currentLeader
+        set age 0
+      ]
+    ]
+  ]
+
+  ask clusterCentroids[
+    set age age + 1
+    set agentsInCluster (fish with [[who] of leader = [leaderID] of myself]) ; set agentset
+    if (count agentsInCluster <=  1)[ set age 0 ] ; if a cluster is only composed of 1 agent, set age to 0, as it's not really a cluster.
+    calculate-average-cluster-age
+    compose-cluster-links
+  ]
+end
+
+
+to compose-cluster-links
+  ;updates linksOfCluster so it holds all the links within the cluster
+  set linksOfCluster no-links
+  let tempLinks linksOfCluster
+  ask agentsInCluster[
+    set tempLinks (link-set my-links tempLinks)
+  ]
+  set linksOfCluster tempLinks
+end
+
+to calculate-average-cluster-age
+  let total 0
+  ask clusterCentroids[
+    if (age > 0)[set total (total + age)] ; only consider ages of real clusters
+  ]
+  ifelse (count ClusterCentroids with [age > 0]) = 0
+  [
+    set averageClusterAge 0
+  ]
+  [
+  set averageClusterAge total / (count ClusterCentroids with [age > 0])
+  ]
+end
+
+to-report centroid-with-this-leader-exists [leaderIDtoCheck]
+  ;checks if there is a cluster centroid with a leader whose id is leaderIDtoCheck
+  let reportValue false
+  ask clusterCentroids
+  [
+    if leaderID = leaderIDtoCheck [set reportValue true]
+  ]
+  report reportValue
+end
+
+to update-global-reporters
+;  Average Cluster Age is already set
+
+  set minClusterAge  min(filter [ i -> i > 0 ] ([age] of clusterCentroids)) ; we only care about ages > 0
+  set maxClusterAge max [age] of clusterCentroids
+  set stdClusterAge standard-deviation [age] of clusterCentroids
+
+  set averageClusterSize (mean [count agentsInCluster] of clusterCentroids)
+  set minClusterSize (min [count agentsInCluster] of clusterCentroids)
+  set maxClusterSize (max [count agentsInCluster] of clusterCentroids)
+  set stdClusterSize (standard-deviation [count agentsInCluster] of clusterCentroids)
 end
 
 
@@ -902,6 +1073,141 @@ group_coordination
 1
 NIL
 HORIZONTAL
+
+SLIDER
+1000
+111
+1226
+144
+clustering-distance
+clustering-distance
+0
+20
+3.0
+1
+1
+patches
+HORIZONTAL
+
+SWITCH
+1011
+155
+1142
+188
+show-links?
+show-links?
+0
+1
+-1000
+
+TEXTBOX
+1006
+70
+1156
+112
+Determines how far fish need to be to be considered  cluster-mates
+11
+0.0
+1
+
+SWITCH
+1010
+202
+1171
+235
+show-centroids?
+show-centroids?
+1
+1
+-1000
+
+MONITOR
+1077
+285
+1208
+330
+averageClusterAge
+averageClusterAge
+2
+1
+11
+
+MONITOR
+1079
+342
+1208
+387
+NIL
+minClusterAge
+17
+1
+11
+
+MONITOR
+1080
+394
+1209
+439
+NIL
+maxClusterAge
+17
+1
+11
+
+MONITOR
+1081
+446
+1209
+491
+NIL
+stdClusterAge
+2
+1
+11
+
+MONITOR
+1222
+284
+1353
+329
+NIL
+averageClusterSize
+2
+1
+11
+
+MONITOR
+1223
+340
+1355
+385
+NIL
+minClusterSize
+17
+1
+11
+
+MONITOR
+1224
+395
+1356
+440
+NIL
+maxClusterSize
+17
+1
+11
+
+MONITOR
+1225
+446
+1356
+491
+NIL
+stdClusterSize
+2
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
