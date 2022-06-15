@@ -109,7 +109,7 @@ to go
         ;; If you have a nearest predator
         if nearest-predator != nobody [
 
-          ;; THESE LINES MADe IT REACT
+          ;; THESE LINES MADE IT REACT
           ;; =====================================================
           ;;( select-escape-task dt )
           ;; set weight flocking-weight
@@ -120,17 +120,20 @@ to go
           ifelse random 100 < group_coordination[
             ;; Coordinate
             ;; Move with the movement of the fish around you
+            ;; set color blue
             find-flockmates
             align dt
+            set weight flocking-weight
           ]
           [
             ;; Act alone
             ;; Execute the Escape Task By Yourself
+            ;; set color white
             select-escape-task dt
           ]
-          flock dt * weight
-          ;; =====================================================
         ]
+      flock dt * weight
+      ;; =====================================================
       ]
     ]
 
@@ -1092,7 +1095,7 @@ group_coordination
 group_coordination
 0
 100
-64.0
+50.0
 1
 1
 NIL
