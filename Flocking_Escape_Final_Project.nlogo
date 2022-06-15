@@ -75,13 +75,17 @@ to setup
 end
 
 to go
+  ;; Set fish speed
   ask fish [
     set delta-speed 0.1 * (random-normal speed (speed * 0.01 * speed-stddev))
     set delta-noise 0.1 * (random-normal 0 noise-stddev)
   ]
+
+  ;; Set noise predator is exposed to
   ask predators [
     set delta-noise 0.1 * (random-normal 0 predator-noise-stddev)
   ]
+  ;; Only spawn predators at 300 ticks to allow patterns to emerge
   if ticks = 300 [
    create-predators predator-population [
     set color green
@@ -90,31 +94,47 @@ to go
     set nearest-prey nobody
     set locked-on nobody
   ]]
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ifelse random 100 < group_coordination[
-    ;; Coordinate
-  ]
-  [
-    ;; Act alone
-  ]
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+  ;; For loop over flocking behaviour of agents
   ;let escape-task select-escape-task
   let t 0
   repeat 10 [
     if t mod (11 - update-freq) = 0 [
       let dt 1 / update-freq
+
+      ;; Fish Flock
       ask fish [
         let weight 1
         find-nearest-predator
+        ;; If you have a nearest predator
         if nearest-predator != nobody [
-          ( select-escape-task dt )
-          set weight flocking-weight
+
+          ;; THESE LINES MADe IT REACT
+          ;; =====================================================
+          ;;( select-escape-task dt )
+          ;; set weight flocking-weight
+          ;; =====================================================
+
+          ;; Coordination or Single Actor Logic
+          ;; =====================================================
+          ifelse random 100 < group_coordination[
+            ;; Coordinate
+            ;; Move with the movement of the fish around you
+            find-flockmates
+            align dt
+          ]
+          [
+            ;; Act alone
+            ;; Execute the Escape Task By Yourself
+            select-escape-task dt
+          ]
+          flock dt * weight
+          ;; =====================================================
         ]
-        flock dt * weight
       ]
     ]
+
+    ;; Updatepredator vision
     if t mod (11 - predator-update-freq) = 0 [
       let dt 1 / predator-update-freq
       ask predators [
@@ -122,6 +142,9 @@ to go
         hunt dt
       ]
     ]
+
+    ;; RT == right turn
+    ;; FD = forward
     ask fish [
       rt delta-noise
       fd delta-speed
@@ -132,6 +155,7 @@ to go
     ]
     set t t + 1
   ]
+
   if not hunting?
   [set counter counter + 1]
   if counter > 300
@@ -555,7 +579,7 @@ population
 population
 1.0
 1000.0
-300.0
+400.0
 1.0
 1
 NIL
@@ -808,7 +832,7 @@ SWITCH
 87
 hunting?
 hunting?
-0
+1
 1
 -1000
 
@@ -939,7 +963,7 @@ CHOOSER
 escape-strategy
 escape-strategy
 "default" "turn 90 deg" "sacrifice" "sprint"
-0
+1
 
 SLIDER
 11
@@ -1068,7 +1092,7 @@ group_coordination
 group_coordination
 0
 100
-50.0
+64.0
 1
 1
 NIL
