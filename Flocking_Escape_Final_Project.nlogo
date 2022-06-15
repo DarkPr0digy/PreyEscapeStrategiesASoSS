@@ -832,7 +832,7 @@ SWITCH
 87
 hunting?
 hunting?
-1
+0
 1
 -1000
 
@@ -963,7 +963,7 @@ CHOOSER
 escape-strategy
 escape-strategy
 "default" "turn 90 deg" "sacrifice" "sprint"
-1
+0
 
 SLIDER
 11
@@ -989,7 +989,7 @@ detection-range
 detection-range
 0
 50
-8.0
+10.0
 1
 1
 patches
@@ -1146,10 +1146,10 @@ show-centroids?
 -1000
 
 MONITOR
-1077
-285
-1208
-330
+1014
+335
+1145
+380
 averageClusterAge
 averageClusterAge
 2
@@ -1157,10 +1157,10 @@ averageClusterAge
 11
 
 MONITOR
-1079
-342
-1208
-387
+1016
+392
+1145
+437
 NIL
 minClusterAge
 17
@@ -1168,10 +1168,10 @@ minClusterAge
 11
 
 MONITOR
-1080
-394
-1209
-439
+1017
+444
+1146
+489
 NIL
 maxClusterAge
 17
@@ -1179,10 +1179,10 @@ maxClusterAge
 11
 
 MONITOR
-1081
-446
-1209
-491
+1018
+496
+1146
+541
 NIL
 stdClusterAge
 2
@@ -1190,10 +1190,10 @@ stdClusterAge
 11
 
 MONITOR
-1222
-284
-1353
-329
+1159
+334
+1290
+379
 NIL
 averageClusterSize
 2
@@ -1201,10 +1201,10 @@ averageClusterSize
 11
 
 MONITOR
-1223
-340
-1355
-385
+1160
+390
+1292
+435
 NIL
 minClusterSize
 17
@@ -1212,10 +1212,10 @@ minClusterSize
 11
 
 MONITOR
-1224
-395
-1356
-440
+1161
+445
+1293
+490
 NIL
 maxClusterSize
 17
@@ -1223,12 +1223,23 @@ maxClusterSize
 11
 
 MONITOR
-1225
-446
-1356
-491
+1162
+496
+1293
+541
 NIL
 stdClusterSize
+2
+1
+11
+
+MONITOR
+1083
+282
+1217
+327
+Number of Clusters
+numOfClusters
 2
 1
 11
