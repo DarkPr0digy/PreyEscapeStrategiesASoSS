@@ -104,32 +104,30 @@ to go
 
       ;; Fish Flock
       ask fish [
+
+        set color yellow - 2 + random 7
+
         let weight 1
         find-nearest-predator
         ;; If you have a nearest predator
         if nearest-predator != nobody [
 
-          ;; THESE LINES MADE IT REACT
-          ;; =====================================================
-          ;;( select-escape-task dt )
-          ;; set weight flocking-weight
-          ;; =====================================================
-
+          ;; THESE LINES MAKE PREY REACT
           ;; Coordination or Single Actor Logic
           ;; =====================================================
           ifelse random 100 < group_coordination[
             ;; Coordinate
             ;; Move with the movement of the fish around you
-            ;; set color blue
             find-flockmates
             align dt
             set weight flocking-weight
+            set color green - 2 + random 7  ;; random shades look nice ?
           ]
           [
             ;; Act alone
             ;; Execute the Escape Task By Yourself
-            ;; set color white
             select-escape-task dt
+            set color blue - 2 + random 7  ;; random shades look nice ?
           ]
         ]
       flock dt * weight
@@ -183,7 +181,9 @@ to go
 
   ask fish [
     set leader self
-    create-links-with other fish in-radius clustering-distance
+    if clusters?[
+      create-links-with other fish in-radius clustering-distance
+    ]
     ask links [
       ;; Color or hide links depending on the switch
       if-else show-links? [color-link] [hide-link]
@@ -192,16 +192,19 @@ to go
 
   ; go over agents, and redefine clusters. We need to go through agents in the same  order every time,
   ; so the leaders are not randomly re-selected (colors would change every time then)
-  foreach sort fish [fishX ->
-    ask fishX[
-      ask link-neighbors [merge];(re)define clusters.
+  ifelse clusters?[
+    foreach sort fish [fishX ->
+      ask fishX[
+        ask link-neighbors [merge];(re)define clusters.
+      ]
     ]
+
+    count-clusters ; leaders[] is initialised here
+    calculate-cluster-centroids ; calculates the centroids of the agent clusters
+    update-global-reporters ; update cluster metrics
   ]
+  [ask links[die]]
 
-  count-clusters ; leaders[] is initialised here
-  calculate-cluster-centroids ; calculates the centroids of the agent clusters
-
-  update-global-reporters ; update cluster metrics
   tick
 end
 
@@ -842,7 +845,7 @@ SWITCH
 87
 hunting?
 hunting?
-0
+1
 1
 -1000
 
@@ -1130,7 +1133,7 @@ SWITCH
 188
 show-links?
 show-links?
-1
+0
 1
 -1000
 
@@ -1273,6 +1276,17 @@ Cluster Size\n
 11
 0.0
 1
+
+SWITCH
+770
+640
+874
+673
+clusters?
+clusters?
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
